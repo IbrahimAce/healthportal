@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Lab Results — HealthPortal{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Lab Results</h1>
+
+{% if results %}
+<div class="space-y-3">
+  {% for result in results %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
+    <div>
+      <p class="font-medium text-gray-800">{{ result.test_name }}</p>
+      <p class="text-sm text-gray-500 mt-0.5">{{ result.created_at|date:"M d, Y" }}</p>
+      {% if result.notes %}
+      <p class="text-xs text-gray-400 mt-1">{{ result.notes }}</p>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs px-2 py-0.5 rounded-full font-semibold
+        {% if result.status == 'READY' %}bg-green-100 text-green-700
+        {% elif result.status == 'REVIEWED' %}bg-blue-100 text-blue-700
+        {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+        {{ result.get_status_display }}
+      </span>
+      <a href="{{ result.result_file.url }}" target="_blank"
+         class="text-sm text-blue-600 hover:underline">View File →</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-dashed border-gray-200 p-12 text-center">
+  <p class="text-gray-400">No lab results found.</p>
+</div>
+{% endif %}
+{% endblock %}

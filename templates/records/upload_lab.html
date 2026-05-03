@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Upload Lab Result — HealthPortal{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Upload Lab Result</h1>
+    <a href="{% url 'appointments:detail' appointment.pk %}" class="text-sm text-blue-600 hover:underline">← Back</a>
+  </div>
+
+  <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm">
+    <p class="text-blue-800 font-medium">{{ appointment.patient.get_full_name }}</p>
+    <p class="text-blue-600">{{ appointment.date }} at {{ appointment.start_time|time:"H:i" }}</p>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data"
+        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Test Name <span class="text-red-500">*</span></label>
+      <input type="text" name="test_name" required placeholder="e.g. Full Blood Count"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Result File <span class="text-red-500">*</span></label>
+      <input type="file" name="result_file" required accept=".pdf,.jpg,.jpeg,.png"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <p class="text-xs text-gray-400 mt-1">PDF, JPG, or PNG accepted</p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+      <textarea name="notes" rows="2"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+
+    <button type="submit"
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+      Upload Result
+    </button>
+  </form>
+</div>
+{% endblock %}

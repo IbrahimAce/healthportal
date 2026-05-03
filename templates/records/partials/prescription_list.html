@@ -1,0 +1,22 @@
+{% if prescriptions %}
+<div class="space-y-3">
+  {% for rx in prescriptions %}
+  <div class="border border-gray-100 rounded-lg p-3 text-sm {% if not rx.is_active %}opacity-50{% endif %}">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="font-semibold text-gray-800">{{ rx.medication_name }} <span class="font-normal text-gray-500">{{ rx.dosage }}</span></p>
+        <p class="text-gray-500 text-xs mt-0.5">{{ rx.get_frequency_display }} · {{ rx.duration_days }} days</p>
+        {% if rx.instructions %}
+        <p class="text-gray-400 text-xs mt-0.5">{{ rx.instructions }}</p>
+        {% endif %}
+      </div>
+      <span class="text-xs px-2 py-0.5 rounded-full {% if rx.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+        {% if rx.is_active %}Active{% else %}Inactive{% endif %}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-400 text-sm">No prescriptions yet.</p>
+{% endif %}

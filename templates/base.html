@@ -44,9 +44,12 @@
           <a href="{% url 'dashboard:patient' %}"      class="hover:text-blue-600">Dashboard</a>
           <a href="{% url 'appointments:book' %}"      class="hover:text-blue-600">Book Appointment</a>
           <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Appointments</a>
+          <a href="{% url 'records:list' %}"           class="hover:text-blue-600">My Records</a>
+          <a href="{% url 'records:lab-list' %}"       class="hover:text-blue-600">Lab Results</a>
         {% elif user.is_doctor %}
           <a href="{% url 'dashboard:doctor' %}"       class="hover:text-blue-600">Dashboard</a>
           <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Schedule</a>
+          <a href="{% url 'records:list' %}"           class="hover:text-blue-600">Records</a>
         {% elif user.is_receptionist %}
           <a href="{% url 'dashboard:receptionist' %}" class="hover:text-blue-600">Dashboard</a>
           <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">Appointments</a>

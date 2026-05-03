@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Medical Records — HealthPortal{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Medical Records</h1>
+
+{% if records %}
+<div class="space-y-3">
+  {% for record in records %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-start justify-between">
+    <div>
+      <p class="font-medium text-gray-800">{{ record.diagnosis|truncatechars:80 }}</p>
+      <p class="text-sm text-gray-500 mt-0.5">
+        {% if user.is_patient %}Dr. {{ record.doctor.get_full_name }}{% else %}{{ record.patient.get_full_name }}{% endif %}
+        · {{ record.created_at|date:"M d, Y" }}
+      </p>
+      {% if record.follow_up_date %}
+      <p class="text-xs text-orange-500 mt-1">Follow-up: {{ record.follow_up_date }}</p>
+      {% endif %}
+    </div>
+    <a href="{% url 'records:detail' record.pk %}"
+       class="text-sm text-blue-600 hover:underline whitespace-nowrap ml-4">View →</a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-dashed border-gray-200 p-12 text-center">
+  <p class="text-gray-400">No medical records found.</p>
+</div>
+{% endif %}
+{% endblock %}
