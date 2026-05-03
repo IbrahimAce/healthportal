@@ -92,7 +92,10 @@ def confirm_booking(request):
     appt_type  = request.POST.get("appointment_type", Appointment.AppointmentType.IN_PERSON)
 
     try:
-        doctor     = get_object_or_404(User, pk=doctor_id, role=Role.DOCTOR)
+        doctor     = get_object_or_404(User, pk=doctor_id)
+        if not doctor.is_doctor:
+            messages.error(request, "Selected user is not a doctor.")
+            return redirect("appointments:book")
         date       = datetime.date.fromisoformat(date_str)
         start_time = datetime.time.fromisoformat(start_str)
         end_time   = datetime.time.fromisoformat(end_str)
