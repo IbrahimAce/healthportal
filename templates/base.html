@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}HealthPortal Kenya{% endblock %}</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- HTMX CDN -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+  <style>
+    /* Smooth HTMX loading indicator */
+    #loading-bar {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      height: 3px; width: 100%;
+      background: #2563eb;
+      z-index: 9999;
+      animation: slide 1s infinite;
+    }
+    @keyframes slide { 0%{width:0%} 100%{width:100%} }
+    .htmx-request #loading-bar { display: block; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+  <!-- Loading bar (shows on any HTMX request) -->
+  <div id="loading-bar"></div>
+
+  <!-- Navbar -->
+  {% if user.is_authenticated %}
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+
+      <a href="/" class="text-blue-600 font-bold text-lg tracking-tight">
+        🏥 HealthPortal
+      </a>
+
+      <div class="flex items-center gap-6 text-sm">
+        {% if user.is_patient %}
+          <a href="{% url 'dashboard:patient' %}"      class="hover:text-blue-600">Dashboard</a>
+          <a href="{% url 'appointments:book' %}"      class="hover:text-blue-600">Book Appointment</a>
+          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Appointments</a>
+        {% elif user.is_doctor %}
+          <a href="{% url 'dashboard:doctor' %}"       class="hover:text-blue-600">Dashboard</a>
+          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Schedule</a>
+        {% elif user.is_receptionist %}
+          <a href="{% url 'dashboard:receptionist' %}" class="hover:text-blue-600">Dashboard</a>
+          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">Appointments</a>
+        {% elif user.is_admin_user %}
+          <a href="{% url 'dashboard:admin' %}"        class="hover:text-blue-600">Dashboard</a>
+          <a href="{% url 'dashboard:admin' %}"        class="hover:text-blue-600">Dashboard</a>
+          <a href="/admin/"                            class="hover:text-blue-600">Django Admin</a>
+        {% endif %}
+
+        <span class="text-gray-400">|</span>
+        <span class="text-gray-600">{{ user.get_full_name }}</span>
+        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ user.role }}</span>
+        <a href="{% url 'accounts:logout' %}" class="text-red-500 hover:text-red-700">Logout</a>
+      </div>
+
+    </div>
+  </nav>
+  {% endif %}
+
+  <!-- Flash messages -->
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2">
+    {% for message in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm font-medium
+      {% if message.tags == 'error' %}bg-red-100 text-red-700
+      {% elif message.tags == 'success' %}bg-green-100 text-green-700
+      {% else %}bg-blue-100 text-blue-700{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main content -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

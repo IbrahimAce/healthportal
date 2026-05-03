@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — HealthPortal{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <p class="text-3xl font-bold text-blue-600">{{ stats.total_patients }}</p>
+    <p class="text-xs text-gray-400 mt-1">Patients</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <p class="text-3xl font-bold text-green-600">{{ stats.total_doctors }}</p>
+    <p class="text-xs text-gray-400 mt-1">Doctors</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <p class="text-3xl font-bold text-yellow-600">{{ stats.todays_appointments }}</p>
+    <p class="text-xs text-gray-400 mt-1">Today's Appointments</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <p class="text-3xl font-bold text-orange-600">{{ stats.pending_appointments }}</p>
+    <p class="text-xs text-gray-400 mt-1">Pending</p>
+  </div>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-700 mb-3">Recent Appointments</h2>
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+      <tr>
+        <th class="px-4 py-3 text-left">Patient</th>
+        <th class="px-4 py-3 text-left">Doctor</th>
+        <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Status</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for appt in recent_appointments %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3">{{ appt.patient.get_full_name }}</td>
+        <td class="px-4 py-3">Dr. {{ appt.doctor.get_full_name }}</td>
+        <td class="px-4 py-3">{{ appt.date }}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold
+            {% if appt.status == 'CONFIRMED' %}bg-green-100 text-green-700
+            {% elif appt.status == 'PENDING' %}bg-yellow-100 text-yellow-700
+            {% elif appt.status == 'COMPLETED' %}bg-blue-100 text-blue-700
+            {% else %}bg-red-100 text-red-700{% endif %}">
+            {{ appt.get_status_display }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

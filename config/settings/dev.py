@@ -23,3 +23,5 @@ LOGGING = {
         "level": "DEBUG",
     },
 }
+
+LOGIN_URL = "/accounts/login/"

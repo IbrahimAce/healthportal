@@ -1,0 +1,51 @@
+{% if error %}
+  <p class="text-red-500 text-sm">{{ error }}</p>
+
+{% elif slots %}
+  <form method="POST" action="{% url 'appointments:confirm' %}">
+    {% csrf_token %}
+    <input type="hidden" name="doctor_id"  value="{{ doctor.user.pk }}" />
+    <input type="hidden" name="date"       value="{{ date }}" />
+
+    <!-- Slot grid -->
+    <div class="grid grid-cols-3 gap-2 mb-5" id="slot-grid">
+      {% for start, end in slots %}
+      <label class="cursor-pointer">
+        <input type="radio" name="start_time" value="{{ start|time:'H:i:s' }}"
+               class="sr-only peer" required />
+        <input type="hidden" name="end_time"   value="{{ end|time:'H:i:s' }}" />
+        <div class="border border-gray-200 rounded-lg px-3 py-2 text-center text-sm
+                    peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600
+                    hover:border-blue-400 transition">
+          {{ start|time:"H:i" }} – {{ end|time:"H:i" }}
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+
+    <!-- Reason for visit -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Reason for visit</label>
+      <textarea name="reason" rows="3" placeholder="Briefly describe your symptoms or reason…"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+
+    <!-- Appointment type -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Appointment type</label>
+      <select name="appointment_type"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="IN_PERSON">In Person</option>
+        <option value="TELECONSULT">Teleconsultation</option>
+      </select>
+    </div>
+
+    <button type="submit"
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+      Confirm Booking
+    </button>
+  </form>
+
+{% else %}
+  <p class="text-gray-400 text-sm">Select a doctor and date above to see available slots.</p>
+{% endif %}
