@@ -48,4 +48,4 @@ RUN SECRET_KEY=dummy-build-key \
 EXPOSE 8000
 
 # Start gunicorn — 2 workers is safe for 4GB RAM
-CMD ["sh", "-c", "python init_admin.py && gunicorn config.wsgi:application --bind [::]:8000 --workers 2 --timeout 120"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python init_admin.py && gunicorn config.wsgi:application --bind [::]:8000 --workers 2 --timeout 120"]
