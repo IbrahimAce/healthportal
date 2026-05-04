@@ -48,4 +48,4 @@ RUN SECRET_KEY=dummy-build-key \
 EXPOSE 8000
 
 # Start gunicorn — 2 workers is safe for 4GB RAM
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "[::]:8000", "--workers", "2", "--timeout", "120"]
