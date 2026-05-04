@@ -4,6 +4,13 @@ DEBUG is off, WhiteNoise serves static files, security headers enabled.
 """
 
 from .base import *  # noqa
+import dj_database_url
+
+# Andasy (and most PaaS) provide a single DATABASE_URL env var
+# This overrides the individual DB_* settings from base.py
+db_from_env = dj_database_url.config(conn_max_age=600)
+if db_from_env:
+    DATABASES["default"].update(db_from_env)
 import os
 
 DEBUG = False
@@ -19,6 +26,9 @@ SECURE_HSTS_SECONDS               = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS    = True
 SESSION_COOKIE_SECURE             = True
 CSRF_COOKIE_SECURE                = True
+
+# Allow Andasy subdomain — update once you know your exact URL
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # ---------------------------------------------------------------------------
 # STATIC FILES — WhiteNoise
