@@ -75,6 +75,7 @@
       <form hx-post="{% url 'records:add-prescription' record.pk %}"
             hx-target="#prescription-list"
             hx-swap="innerHTML"
+            hx-on::after-request="this.reset()"
             class="space-y-3">
         {% csrf_token %}
 
