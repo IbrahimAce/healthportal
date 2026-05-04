@@ -28,7 +28,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Collect static files for WhiteNoise to serve
-RUN python manage.py collectstatic --noinput
+RUN SECRET_KEY=dummy-build-key-not-used-in-production python manage.py collectstatic --noinput
 
 # Expose application port
 EXPOSE 8000
