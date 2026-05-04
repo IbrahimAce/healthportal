@@ -128,9 +128,16 @@ def confirm_booking(request):
         status           = Appointment.Status.PENDING,
     )
 
+# Fire notification tasks asynchronously — don't block the response
+    from notifications.tasks import (
+        send_appointment_confirmation_email,
+        send_sms_reminder,
+    )
+    send_appointment_confirmation_email.delay(appointment.pk)
+    send_sms_reminder.delay(appointment.pk)
+
     messages.success(request, f"Appointment booked for {date} at {start_time.strftime('%H:%M')}. Awaiting confirmation.")
     return redirect("appointments:detail", pk=appointment.pk)
-
 
 @login_required
 def appointment_list(request):
@@ -206,6 +213,10 @@ def cancel_appointment(request, pk):
     if request.method == "POST":
         appointment.status = Appointment.Status.CANCELLED
         appointment.save()
+
+        from notifications.tasks import send_appointment_cancellation_email
+        send_appointment_cancellation_email.delay(appointment.pk)
+
         messages.success(request, "Appointment cancelled successfully.")
         return redirect("appointments:list")
 

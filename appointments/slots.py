@@ -1,13 +1,13 @@
 """
-Slot generation utility.
+Slot generation utility with Redis caching.
 
-Given a doctor's schedule for a day, generates all possible time slots.
-Then filters out already-booked ones so only free slots are shown.
-
-This is pure Python logic — no Django views here — keeping concerns separate.
+Doctor availability for a given day is cached for 5 minutes —
+this is the most frequently queried and rarely changing data.
+Cache is invalidated automatically on expiry.
 """
 
 import datetime
+from django.core.cache import cache
 from .models import Appointment
 
 
@@ -16,23 +16,28 @@ def generate_slots(doctor_profile, date):
     Returns a list of available (start_time, end_time) tuples
     for a given doctor on a given date.
 
-    Steps:
-      1. Find the doctor's schedule for that weekday
-      2. Generate all slots within working hours
-      3. Remove already-booked slots
-      4. Remove slots in the past (if today)
+    Results are cached per doctor+date for 5 minutes to reduce
+    database hits during peak booking periods.
     """
 
-    # date.weekday() returns 0=Monday ... 6=Sunday — matches our DoctorSchedule.day_of_week
+    cache_key = f"slots__{doctor_profile.pk}__{date.isoformat()}"
+    cached    = cache.get(cache_key)
+
+    if cached is not None:
+        return cached
+
+    # Find doctor's schedule for this weekday
     schedule = doctor_profile.schedules.filter(
         day_of_week=date.weekday(),
         is_active=True
     ).first()
 
     if not schedule:
-        return []  # doctor doesn't work this day
+        cache.set(cache_key, [], 60 * 5)
+        return []
 
-    slots = []
+    # Generate all possible slots
+    slots   = []
     current = datetime.datetime.combine(date, schedule.start_time)
     end     = datetime.datetime.combine(date, schedule.end_time)
     delta   = datetime.timedelta(minutes=schedule.slot_duration_minutes)
@@ -41,7 +46,7 @@ def generate_slots(doctor_profile, date):
         slots.append((current.time(), (current + delta).time()))
         current += delta
 
-    # Fetch already booked start times for this doctor on this date
+    # Remove already-booked slots
     booked_times = set(
         Appointment.objects.filter(
             doctor=doctor_profile.user,
@@ -53,17 +58,18 @@ def generate_slots(doctor_profile, date):
         ).values_list("start_time", flat=True)
     )
 
-    # Filter out booked and past slots
-    now = datetime.datetime.now().time()
+    now   = datetime.datetime.now().time()
     today = datetime.date.today()
 
     available = []
     for start, end_time in slots:
         if start in booked_times:
             continue
-        # If booking for today, skip slots already passed
         if date == today and start <= now:
             continue
         available.append((start, end_time))
+
+    # Cache for 5 minutes
+    cache.set(cache_key, available, 60 * 5)
 
     return available
