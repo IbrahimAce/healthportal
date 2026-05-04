@@ -28,7 +28,21 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Collect static files for WhiteNoise to serve
-RUN SECRET_KEY=dummy-build-key-not-used-in-production python manage.py collectstatic --noinput
+RUN SECRET_KEY=dummy-build-key \
+    ALLOWED_HOSTS=localhost \
+    DB_NAME=dummy \
+    DB_USER=dummy \
+    DB_PASSWORD=dummy \
+    DB_HOST=localhost \
+    DB_PORT=5432 \
+    REDIS_URL=redis://localhost:6379/0 \
+    EMAIL_HOST=smtp.gmail.com \
+    EMAIL_PORT=587 \
+    EMAIL_USE_TLS=True \
+    EMAIL_HOST_USER=dummy@dummy.com \
+    EMAIL_HOST_PASSWORD=dummy \
+    SITE_NAME=HealthPortal \
+    python manage.py collectstatic --noinput
 
 # Expose application port
 EXPOSE 8000
