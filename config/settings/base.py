@@ -124,6 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -202,3 +203,16 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SITE_NAME = env("SITE_NAME", default="HealthPortal")
+
+# ---------------------------------------------------------------------------
+# SIMPLE JWT
+# ---------------------------------------------------------------------------
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME":  timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS":  True,
+    "AUTH_HEADER_TYPES":      ("Bearer",),
+}
