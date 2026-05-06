@@ -15,6 +15,7 @@ urlpatterns = [
     path("", include("dashboard.urls")),           # main frontend
     path("accounts/", include("accounts.urls")),   # auth
     path("appointments/", include("appointments.urls")),
+    path("doctors/", include("doctors.urls")),
     path("records/", include("records.urls")),
 
     # API routes — all under /api/v1/

@@ -7,93 +7,145 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary:   { DEFAULT: '#0A6E9F', light: '#E8F4FD', dark: '#064F73' },
+            secondary: { DEFAULT: '#00897B', light: '#E0F2F1' },
+            accent:    { DEFAULT: '#F57C00', light: '#FFF3E0' },
+            surface:   '#F7FAFB',
+            border:    '#DDE6EE',
+          }
+        }
+      }
+    }
+  </script>
 
   <!-- HTMX CDN -->
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
   <style>
-    /* Smooth HTMX loading indicator */
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     #loading-bar {
-      display: none;
-      position: fixed; top: 0; left: 0;
-      height: 3px; width: 100%;
-      background: #2563eb;
-      z-index: 9999;
-      animation: slide 1s infinite;
+      display: none; position: fixed; top: 0; left: 0;
+      height: 3px; width: 100%; background: #0A6E9F;
+      z-index: 9999; animation: slide 1.2s ease infinite;
     }
     @keyframes slide { 0%{width:0%} 100%{width:100%} }
     .htmx-request #loading-bar { display: block; }
+    .nav-link {
+      color: #4B6070;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      transition: all 0.15s;
+    }
+    .nav-link:hover { background: #E8F4FD; color: #0A6E9F; }
+    .nav-link.active { background: #E8F4FD; color: #0A6E9F; }
+    .role-badge-PATIENT      { background:#E0F2F1; color:#00695C; }
+    .role-badge-DOCTOR       { background:#E8F4FD; color:#064F73; }
+    .role-badge-RECEPTIONIST { background:#FFF3E0; color:#E65100; }
+    .role-badge-ADMIN        { background:#F3E5F5; color:#6A1B9A; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen">
+<body class="bg-surface text-gray-800 min-h-screen">
 
-  <!-- Loading bar (shows on any HTMX request) -->
   <div id="loading-bar"></div>
 
-  <!-- Navbar -->
   {% if user.is_authenticated %}
-  <nav class="bg-white shadow-sm border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+  <!-- Top Header Bar -->
+  <header class="bg-white border-b border-border shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
 
-      <a href="/" class="text-blue-600 font-bold text-lg tracking-tight">
-        🏥 HealthPortal
-      </a>
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2 text-primary font-bold text-lg tracking-tight no-underline">
+          <span class="text-2xl">🏥</span>
+          <span>HealthPortal <span class="text-secondary font-normal text-sm">Kenya</span></span>
+        </a>
 
-      <div class="flex items-center gap-6 text-sm">
-        {% if user.is_patient %}
-          <a href="{% url 'dashboard:patient' %}"      class="hover:text-blue-600">Dashboard</a>
-          <a href="{% url 'appointments:book' %}"      class="hover:text-blue-600">Book Appointment</a>
-          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Appointments</a>
-          <a href="{% url 'records:list' %}"           class="hover:text-blue-600">My Records</a>
-          <a href="{% url 'records:lab-list' %}"       class="hover:text-blue-600">Lab Results</a>
-        {% elif user.is_doctor %}
-          <a href="{% url 'dashboard:doctor' %}"       class="hover:text-blue-600">Dashboard</a>
-          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">My Schedule</a>
-          <a href="{% url 'records:list' %}"           class="hover:text-blue-600">Records</a>
-        {% elif user.is_receptionist %}
-          <a href="{% url 'dashboard:receptionist' %}" class="hover:text-blue-600">Dashboard</a>
-          <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">Appointments</a>
-        {% elif user.is_admin_user %}
-          <a href="{% url 'dashboard:admin' %}" class="hover:text-blue-600">Dashboard</a>
-          <a href="{% url 'appointments:list' %}" class="hover:text-blue-600">Appointments</a>
-          <a href="/admin/" class="hover:text-blue-600">Django Admin</a>
-        {% endif %}
+        <!-- Nav Links -->
+        <nav class="hidden md:flex items-center gap-1">
+          {% if user.is_patient %}
+            <a href="{% url 'dashboard:patient' %}"  class="nav-link">Dashboard</a>
+            <a href="{% url 'appointments:book' %}"  class="nav-link">Book Appointment</a>
+            <a href="{% url 'appointments:list' %}"  class="nav-link">My Appointments</a>
+            <a href="{% url 'records:list' %}"       class="nav-link">My Records</a>
+            <a href="{% url 'records:lab-list' %}"   class="nav-link">Lab Results</a>
+          {% elif user.is_doctor %}
+            <a href="{% url 'dashboard:doctor' %}"   class="nav-link">Dashboard</a>
+            <a href="{% url 'appointments:list' %}"  class="nav-link">My Schedule</a>
+            <a href="{% url 'doctors:schedule' %}"   class="nav-link">Set Availability</a>
+            <a href="{% url 'records:list' %}"       class="nav-link">Records</a>
+          {% elif user.is_receptionist %}
+            <a href="{% url 'dashboard:receptionist' %}" class="nav-link">Dashboard</a>
+            <a href="{% url 'appointments:list' %}"  class="nav-link">Appointments</a>
+          {% elif user.is_admin_user %}
+            <a href="{% url 'dashboard:admin' %}"    class="nav-link">Dashboard</a>
+            <a href="{% url 'appointments:list' %}"  class="nav-link">Appointments</a>
+            <a href="/admin/"                        class="nav-link">Django Admin</a>
+          {% endif %}
+        </nav>
 
-        <span class="text-gray-400">|</span>
-        <span class="text-gray-600">{{ user.get_full_name }}</span>
-        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ user.role }}</span>
-        <a href="{% url 'accounts:logout' %}" class="text-red-500 hover:text-red-700">Logout</a>
+        <!-- User Info + Logout -->
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+              {{ user.first_name|first|upper }}
+            </div>
+            <div class="text-sm">
+              <p class="font-medium text-gray-800 leading-none">{{ user.get_full_name }}</p>
+              <span class="text-xs px-1.5 py-0.5 rounded font-medium role-badge-{{ user.role }}">
+                {{ user.role }}
+              </span>
+            </div>
+          </div>
+          <a href="{% url 'accounts:logout' %}"
+             class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition">
+            Logout
+          </a>
+        </div>
+
       </div>
-
     </div>
-  </nav>
+  </header>
   {% endif %}
 
   <!-- Flash messages -->
   {% if messages %}
-  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-4 space-y-2">
     {% for message in messages %}
-    <div class="px-4 py-3 rounded-lg text-sm font-medium
-      {% if message.tags == 'error' %}bg-red-100 text-red-700
-      {% elif message.tags == 'success' %}bg-green-100 text-green-700
-      {% else %}bg-blue-100 text-blue-700{% endif %}">
-      {{ message }}
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl text-sm font-medium border
+      {% if message.tags == 'error' %}bg-red-50 text-red-700 border-red-200
+      {% elif message.tags == 'success' %}bg-green-50 text-green-700 border-green-200
+      {% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+      <span>{% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✅{% else %}ℹ️{% endif %}</span>
+      <span>{{ message }}</span>
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
   <!-- Main content -->
-  <main class="max-w-7xl mx-auto px-4 py-8">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
     {% block content %}{% endblock %}
   </main>
 
-<!-- Tell HTMX to include Django's CSRF token on every request -->
+  <!-- Footer -->
+  <footer class="border-t border-border bg-white mt-12 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+      <span>🏥 HealthPortal Kenya &copy; 2025 — Built with Django + HTMX</span>
+      <span>Serving patients across Kenya 🇰🇪</span>
+    </div>
+  </footer>
+
   <script>
     document.body.addEventListener('htmx:configRequest', function(evt) {
       evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
     });
   </script>
-
 </body>
 </html>

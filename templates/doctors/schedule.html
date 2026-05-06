@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+{% block title %}Manage Schedule — HealthPortal{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">My Weekly Schedule</h1>
+      <p class="text-sm text-gray-500 mt-1">Select the days you are available and set your working hours</p>
+    </div>
+    <a href="{% url 'dashboard:doctor' %}" class="text-sm text-primary hover:underline">← Dashboard</a>
+  </div>
+
+  <form method="POST" class="space-y-4">
+    {% csrf_token %}
+
+    {% for day_num, day_name in days %}
+    {% with sched=current_schedules|default:'' %}
+
+    <div class="bg-white rounded-xl border border-border p-5 transition"
+         x-data="{ enabled: {% if day_num in current_schedules %}true{% else %}false{% endif %} }"
+         id="day-card-{{ day_num }}">
+
+      <div class="flex items-center gap-4">
+        <!-- Checkbox -->
+        <input type="checkbox"
+               name="days"
+               value="{{ day_num }}"
+               id="day_{{ day_num }}"
+               onchange="toggleDay({{ day_num }}, this.checked)"
+               {% if day_num in current_schedules %}checked{% endif %}
+               class="w-5 h-5 accent-blue-600 cursor-pointer" />
+
+        <label for="day_{{ day_num }}" class="text-base font-semibold text-gray-800 cursor-pointer w-28">
+          {{ day_name }}
+        </label>
+
+        <!-- Time inputs — shown when checkbox is checked -->
+        <div id="times_{{ day_num }}"
+             class="flex flex-wrap items-center gap-3 {% if day_num not in current_schedules %}hidden{% endif %}">
+
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 font-medium">From</label>
+            <input type="time"
+                   name="start_time_{{ day_num }}"
+                   value="{% if day_num in current_schedules %}{{ current_schedules|get_item:day_num|attr:'start_time'|time:'H:i' }}{% else %}08:00{% endif %}"
+                   class="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 font-medium">To</label>
+            <input type="time"
+                   name="end_time_{{ day_num }}"
+                   value="{% if day_num in current_schedules %}{{ current_schedules|get_item:day_num|attr:'end_time'|time:'H:i' }}{% else %}17:00{% endif %}"
+                   class="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 font-medium">Slot</label>
+            <select name="slot_duration_{{ day_num }}"
+                    class="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <option value="15"  {% if day_num in current_schedules and current_schedules|get_item:day_num|attr:'slot_duration_minutes' == 15  %}selected{% endif %}>15 min</option>
+              <option value="30"  {% if day_num not in current_schedules or current_schedules|get_item:day_num|attr:'slot_duration_minutes' == 30 %}selected{% endif %}>30 min</option>
+              <option value="45"  {% if day_num in current_schedules and current_schedules|get_item:day_num|attr:'slot_duration_minutes' == 45  %}selected{% endif %}>45 min</option>
+              <option value="60"  {% if day_num in current_schedules and current_schedules|get_item:day_num|attr:'slot_duration_minutes' == 60  %}selected{% endif %}>60 min</option>
+            </select>
+          </div>
+
+        </div>
+
+        {% if day_num not in current_schedules %}
+        <p id="off_{{ day_num }}" class="text-sm text-gray-400 italic">Day off</p>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {% endwith %}
+    {% endfor %}
+
+    <div class="pt-4">
+      <button type="submit"
+              class="bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition">
+        Save Schedule
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleDay(dayNum, checked) {
+  const timesDiv = document.getElementById('times_' + dayNum);
+  const offText  = document.getElementById('off_'   + dayNum);
+  if (checked) {
+    timesDiv.classList.remove('hidden');
+    if (offText) offText.classList.add('hidden');
+  } else {
+    timesDiv.classList.add('hidden');
+    if (offText) offText.classList.remove('hidden');
+  }
+}
+</script>
+{% endblock %}

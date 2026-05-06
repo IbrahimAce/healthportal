@@ -36,6 +36,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",
     "django_filters",
     "django_structlog",
+    "axes",
 ]
 
 LOCAL_APPS = [
@@ -61,6 +62,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "axes.middleware.AxesMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_structlog.middlewares.RequestMiddleware",  # structured logging
 ]
@@ -216,3 +218,16 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS":  True,
     "AUTH_HEADER_TYPES":      ("Bearer",),
 }
+
+# ---------------------------------------------------------------------------
+# SECURITY: DJANGO AXES (BRUTE FORCE PROTECTION)
+# ---------------------------------------------------------------------------
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+AXES_FAILURE_LIMIT = 3           # Lock out after 3 failed attempts
+AXES_COOLOFF_TIME = 2160            # Keep them locked out for 1 hour
+AXES_RESET_ON_SUCCESS = True     # Reset the failed count if they log in successfully
+AXES_LOCK_OUT_AT_FAILURE = True  # Lock out immediately on the 3rd failure
