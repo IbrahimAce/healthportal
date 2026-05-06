@@ -20,6 +20,45 @@ from accounts.models import User, Role
 from .models import Appointment
 from .slots import generate_slots
 
+def _parse_date(date_str):
+    """
+    Normalize a date string to a datetime.date object.
+    Accepts YYYY-MM-DD (standard), DD/MM/YYYY, MM/DD/YYYY, MM-DD-YYYY.
+    This makes the booking flow work across all browsers and locales.
+    """
+    if not date_str:
+        return None
+    raw = date_str.strip()
+
+    # Standard ISO format — fast path
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError:
+        pass
+
+    # Slash-separated formats
+    if "/" in raw:
+        parts = raw.split("/")
+        if len(parts) == 3:
+            # If last part is 4 digits it's the year: MM/DD/YYYY or DD/MM/YYYY
+            if len(parts[2]) == 4:
+                # Heuristic: if first part > 12 it must be DD/MM/YYYY
+                if int(parts[0]) > 12:
+                    return datetime.date(int(parts[2]), int(parts[1]), int(parts[0]))
+                else:
+                    # Treat as MM/DD/YYYY (Firefox US locale default)
+                    return datetime.date(int(parts[2]), int(parts[0]), int(parts[1]))
+            # YYYY/MM/DD
+            if len(parts[0]) == 4:
+                return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+
+    # Dash-separated non-ISO: MM-DD-YYYY
+    if "-" in raw:
+        parts = raw.split("-")
+        if len(parts) == 3 and len(parts[2]) == 4:
+            return datetime.date(int(parts[2]), int(parts[0]), int(parts[1]))
+
+    raise ValueError(f"Unrecognised date format: {raw!r}")
 
 @login_required
 def book_appointment(request):
@@ -59,7 +98,7 @@ def load_slots(request):
             if "/" in clean:
                 parts = clean.split("/")
                 clean = f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
-            date = datetime.date.fromisoformat(clean)
+            date = _parse_date(date_str)
 
             if date < timezone.localdate():
                 error = "Please select a future date."
@@ -104,7 +143,7 @@ def confirm_booking(request):
         if "/" in clean:
             parts = clean.split("/")
             clean = f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
-        date = datetime.date.fromisoformat(clean)
+        date = _parse_date(date_str)
         start_time = datetime.time.fromisoformat(start_str)
         end_time   = datetime.time.fromisoformat(end_str)
     except (ValueError, TypeError):

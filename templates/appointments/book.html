@@ -59,4 +59,48 @@
   </div>
 
 </div>
+
+<script>
+  /*
+   * Force YYYY-MM-DD format before HTMX sends the date value.
+   * HTML date inputs internally always store as YYYY-MM-DD but some
+   * browsers (Firefox on Linux, Safari on some locales, older Android
+   * WebView) may submit display format instead.
+   * This intercepts every HTMX request and normalises the date param.
+   */
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    const params = evt.detail.parameters;
+    if (params.date) {
+      params.date = normalizeDate(params.date);
+    }
+  });
+
+  function normalizeDate(raw) {
+    raw = raw.trim();
+    // Already correct format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+    // Use the date input's valueAsDate which is always a proper Date object
+    const input = document.getElementById('date-input');
+    if (input && input.valueAsDate) {
+      const d = input.valueAsDate;
+      const yyyy = d.getUTCFullYear();
+      const mm   = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dd   = String(d.getUTCDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // Fallback: parse common formats manually
+    // DD/MM/YYYY
+    let m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+
+    // MM-DD-YYYY
+    m = raw.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+
+    // Return as-is if nothing matches — server will catch it
+    return raw;
+  }
+</script>
 {% endblock %}
