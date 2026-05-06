@@ -55,7 +55,11 @@ def load_slots(request):
     if doctor_id and date_str:
         try:
             doctor = get_object_or_404(DoctorProfile, pk=doctor_id)
-            date   = datetime.date.fromisoformat(date_str)
+            clean = date_str.strip()
+            if "/" in clean:
+                parts = clean.split("/")
+                clean = f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
+            date = datetime.date.fromisoformat(clean)
 
             if date < timezone.localdate():
                 error = "Please select a future date."
@@ -96,7 +100,11 @@ def confirm_booking(request):
         if not doctor.is_doctor:
             messages.error(request, "Selected user is not a doctor.")
             return redirect("appointments:book")
-        date       = datetime.date.fromisoformat(date_str)
+        clean = date_str.strip()
+        if "/" in clean:
+            parts = clean.split("/")
+            clean = f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
+        date = datetime.date.fromisoformat(clean)
         start_time = datetime.time.fromisoformat(start_str)
         end_time   = datetime.time.fromisoformat(end_str)
     except (ValueError, TypeError):
