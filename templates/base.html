@@ -55,7 +55,6 @@
           <a href="{% url 'appointments:list' %}"      class="hover:text-blue-600">Appointments</a>
         {% elif user.is_admin_user %}
           <a href="{% url 'dashboard:admin' %}"        class="hover:text-blue-600">Dashboard</a>
-          <a href="{% url 'dashboard:admin' %}"        class="hover:text-blue-600">Dashboard</a>
           <a href="/admin/"                            class="hover:text-blue-600">Django Admin</a>
         {% endif %}
 
