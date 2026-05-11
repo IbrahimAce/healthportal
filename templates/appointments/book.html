@@ -16,9 +16,8 @@
         <select id="doctor-select" name="doctor_id"
           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           hx-get="{% url 'appointments:slots' %}"
-          hx-include="[name='date']"
+          hx-include="[name='date'],[name='doctor_id']"
           hx-target="#slots-container"
-          hx-include="#date-input"
           hx-indicator="#slot-spinner">
           <option value="">— Select a doctor —</option>
           {% for doctor in doctors %}
