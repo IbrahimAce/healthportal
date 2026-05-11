@@ -6,7 +6,6 @@
 
   <h1 class="text-2xl font-bold text-gray-800 mb-6">Book an Appointment</h1>
 
-  <!-- Step 1: Doctor + Date picker -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Step 1 — Choose Doctor & Date</h2>
 
@@ -28,9 +27,8 @@
             (KES {{ doctor.consultation_fee }})
           </option>
           {% endfor %}
-        <!-- Show available days for selected doctor -->
-        <div id="doctor-availability" class="mt-2 text-xs text-gray-500"></div>
         </select>
+        <div id="doctor-availability" class="mt-2 text-xs text-gray-500"></div>
       </div>
 
       <div>
@@ -47,14 +45,11 @@
     </div>
   </div>
 
-  <!-- Step 2: Available slots (loaded via HTMX) -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Step 2 — Pick a Time Slot</h2>
-      <!-- HTMX loading spinner -->
       <span id="slot-spinner" class="htmx-indicator text-blue-600 text-sm">Loading slots…</span>
     </div>
-
     <div id="slots-container">
       <p class="text-gray-400 text-sm">Select a doctor and date above to see available slots.</p>
     </div>
@@ -63,24 +58,23 @@
 </div>
 
 <script>
-  // Show doctor's available days when selected — pure DOM, no fetch needed
   const availability = {
     {% for doctor in doctors %}
     "{{ doctor.pk }}": [
       {% for sched in doctor.schedules.all %}
         "{{ sched.get_day_of_week_display }} {{ sched.start_time|time:'H:i' }}–{{ sched.end_time|time:'H:i' }}"{% if not forloop.last %},{% endif %}
       {% endfor %}
-    ],
+    ]{% if not forloop.last %},{% endif %}
     {% endfor %}
   };
 
   document.getElementById('doctor-select').addEventListener('change', function() {
-    const info = document.getElementById('doctor-availability');
     const days = availability[this.value];
+    const div  = document.getElementById('doctor-availability');
     if (days && days.length > 0) {
-      info.innerHTML = '📅 Available: ' + days.join(' &nbsp;|&nbsp; ');
+      div.innerHTML = '📅 Available: ' + days.join(' &nbsp;|&nbsp; ');
     } else {
-      info.innerHTML = '';
+      div.innerHTML = '';
     }
   });
 </script>
