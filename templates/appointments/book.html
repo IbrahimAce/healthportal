@@ -37,7 +37,7 @@
           hx-get="{% url 'appointments:slots' %}"
           hx-trigger="change"
           hx-target="#slots-container"
-          hx-include="[name='doctor_id']"
+          hx-include="[name='doctor_id'],[name='date']"
           hx-indicator="#slot-spinner" />
       </div>
 
