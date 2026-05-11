@@ -21,57 +21,25 @@ from .models import Appointment
 from .slots import generate_slots
 
 def _parse_date(date_str):
-    """
-    Normalize a date string to a datetime.date object.
-    Handles all browser/locale formats including Firefox which sends
-    spaces around slashes: '05 / 12 / 2026'
-    Returns None if date_str is empty or None.
-    """
+    """Convert date string to date object - production safe"""
     if not date_str:
         return None
 
-    # Clean the string
-    raw = date_str.replace(" ", "").strip()
-    if not raw:
-        return None
+    # Remove any whitespace or hidden characters
+    date_str = date_str.strip()
 
-    # Remove any timezone info if present
-    if 'T' in raw:
-        raw = raw.split('T')[0]
-    if '+' in raw:
-        raw = raw.split('+')[0]
-
-    # Try ISO format YYYY-MM-DD first (most common)
+    # Try YYYY-MM-DD (what browser sends)
     try:
-        return datetime.date.fromisoformat(raw)
-    except ValueError:
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+    except:
         pass
 
-    # Try DD/MM/YYYY format
-    if "/" in raw:
-        parts = raw.split("/")
-        if len(parts) == 3:
-            # Try YYYY/MM/DD
-            if len(parts[0]) == 4:
-                try:
-                    return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
-                except ValueError:
-                    pass
-
-            # Try MM/DD/YYYY or DD/MM/YYYY
-            try:
-                # Assume DD/MM/YYYY
-                return datetime.date(int(parts[2]), int(parts[1]), int(parts[0]))
-            except (ValueError, IndexError):
-                pass
-
-    # Try parsing with datetime.strptime as fallback
-    formats = ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d']
-    for fmt in formats:
-        try:
-            return datetime.datetime.strptime(raw, fmt).date()
-        except ValueError:
-            continue
+    # Try removing spaces (just in case)
+    try:
+        cleaned = date_str.replace(" ", "").replace("/", "-")
+        return datetime.datetime.strptime(cleaned, "%Y-%m-%d").date()
+    except:
+        pass
 
     return None
 
