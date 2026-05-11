@@ -29,6 +29,9 @@
           </option>
           {% endfor %}
         </select>
+        <!-- Show available days for selected doctor -->
+        <div id="doctor-availability" class="mt-2 text-xs text-gray-500"></div>
+        </select>
       </div>
 
       <div>
@@ -59,4 +62,28 @@
   </div>
 
 </div>
+
+<script>
+  // Show doctor's available days when selected — pure DOM, no fetch needed
+  const availability = {
+    {% for doctor in doctors %}
+    "{{ doctor.pk }}": [
+      {% for sched in doctor.schedules.all %}
+        "{{ sched.get_day_of_week_display }} {{ sched.start_time|time:'H:i' }}–{{ sched.end_time|time:'H:i' }}"{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    {% endfor %}
+  };
+
+  document.getElementById('doctor-select').addEventListener('change', function() {
+    const info = document.getElementById('doctor-availability');
+    const days = availability[this.value];
+    if (days && days.length > 0) {
+      info.innerHTML = '📅 Available: ' + days.join(' &nbsp;|&nbsp; ');
+    } else {
+      info.innerHTML = '';
+    }
+  });
+</script>
+
 {% endblock %}

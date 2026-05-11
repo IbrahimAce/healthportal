@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}HealthPortal Kenya{% endblock %}</title>
 
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -23,7 +22,6 @@
     }
   </script>
 
-  <!-- HTMX CDN -->
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
   <style>
@@ -42,9 +40,9 @@
       padding: 0.375rem 0.75rem;
       border-radius: 0.375rem;
       transition: all 0.15s;
+      display: block;
     }
     .nav-link:hover { background: #E8F4FD; color: #0A6E9F; }
-    .nav-link.active { background: #E8F4FD; color: #0A6E9F; }
     .role-badge-PATIENT      { background:#E0F2F1; color:#00695C; }
     .role-badge-DOCTOR       { background:#E8F4FD; color:#064F73; }
     .role-badge-RECEPTIONIST { background:#FFF3E0; color:#E65100; }
@@ -56,18 +54,19 @@
   <div id="loading-bar"></div>
 
   {% if user.is_authenticated %}
-  <!-- Top Header Bar -->
   <header class="bg-white border-b border-border shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
+
+      <!-- Main header row -->
       <div class="flex items-center justify-between h-16">
 
         <!-- Logo -->
-        <a href="/" class="flex items-center gap-2 text-primary font-bold text-lg tracking-tight no-underline">
+        <a href="/" class="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
           <span class="text-2xl">🏥</span>
           <span>HealthPortal <span class="text-secondary font-normal text-sm">Kenya</span></span>
         </a>
 
-        <!-- Nav Links -->
+        <!-- Desktop Nav -->
         <nav class="hidden md:flex items-center gap-1">
           {% if user.is_patient %}
             <a href="{% url 'dashboard:patient' %}"  class="nav-link">Dashboard</a>
@@ -90,8 +89,10 @@
           {% endif %}
         </nav>
 
-        <!-- User Info + Logout -->
+        <!-- Right side: user info + hamburger -->
         <div class="flex items-center gap-3">
+
+          <!-- User info (hidden on very small screens) -->
           <div class="hidden sm:flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
               {{ user.first_name|first|upper }}
@@ -103,13 +104,47 @@
               </span>
             </div>
           </div>
+
+          <!-- Logout button (desktop only) -->
           <a href="{% url 'accounts:logout' %}"
-             class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition">
+             class="hidden md:inline-block text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition">
             Logout
           </a>
-        </div>
 
+          <!-- Hamburger button (mobile only) -->
+          <button id="hamburger-btn"
+                  class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+            <svg id="icon-open"  class="w-6 h-6"           fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <svg id="icon-close" class="w-6 h-6 hidden"    fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+
+        </div>
       </div>
+
+      <!-- Mobile dropdown menu (hidden by default) -->
+      <div id="mobile-menu" class="hidden md:hidden pb-3 border-t border-gray-100 pt-2">
+        {% if user.is_patient %}
+          <a href="{% url 'dashboard:patient' %}"  class="nav-link">Dashboard</a>
+          <a href="{% url 'appointments:book' %}"  class="nav-link">Book Appointment</a>
+          <a href="{% url 'appointments:list' %}"  class="nav-link">My Appointments</a>
+          <a href="{% url 'records:list' %}"       class="nav-link">My Records</a>
+          <a href="{% url 'records:lab-list' %}"   class="nav-link">Lab Results</a>
+        {% elif user.is_doctor %}
+          <a href="{% url 'dashboard:doctor' %}"   class="nav-link">Dashboard</a>
+          <a href="{% url 'appointments:list' %}"  class="nav-link">My Schedule</a>
+          <a href="{% url 'doctors:schedule' %}"   class="nav-link">Set Availability</a>
+          <a href="{% url 'records:list' %}"       class="nav-link">Records</a>
+        {% elif user.is_receptionist %}
+          <a href="{% url 'dashboard:receptionist' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'appointments:list' %}"  class="nav-link">Appointments</a>
+        {% elif user.is_admin_user %}
+          <a href="{% url 'dashboard:admin' %}"    class="nav-link">Dashboard</a>
+          <a href="{% url 'appointments:list' %}"  class="nav-link">Appointments</a>
+          <a href="/admin/"                        class="nav-link">Django Admin</a>
+        {% endif %}
+        <a href="{% url 'accounts:logout' %}" class="nav-link text-red-600 mt-1">Logout</a>
+      </div>
+
     </div>
   </header>
   {% endif %}
@@ -137,15 +172,39 @@
   <!-- Footer -->
   <footer class="border-t border-border bg-white mt-12 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-      <span>🏥 HealthPortal Kenya &copy; 2025 — Built with Django + HTMX</span>
+      <span>🏥 HealthPortal Kenya &copy; {% now "Y" %} — Built with Django + HTMX</span>
       <span>Serving patients across Kenya 🇰🇪</span>
     </div>
   </footer>
 
   <script>
+    // CSRF for HTMX
     document.body.addEventListener('htmx:configRequest', function(evt) {
       evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    });
+
+    // Mobile hamburger toggle
+    const btn   = document.getElementById('hamburger-btn');
+    const menu  = document.getElementById('mobile-menu');
+    const open  = document.getElementById('icon-open');
+    const close = document.getElementById('icon-close');
+
+    btn.addEventListener('click', function() {
+      const isHidden = menu.classList.toggle('hidden');
+      open.classList.toggle('hidden', !isHidden);
+      close.classList.toggle('hidden', isHidden);
+    });
+
+    // Close menu when any link inside it is clicked
+    menu.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        menu.classList.add('hidden');
+        open.classList.remove('hidden');
+        close.classList.add('hidden');
+      });
     });
   </script>
 </body>
 </html>
+ENDOFFILE</parameter>
+<parameter name="description">Write the complete corrected base.html in one command</parameter>

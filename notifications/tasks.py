@@ -189,3 +189,28 @@ def process_mpesa_payment(self, appointment_id, phone_number):
     except Exception as exc:
         logger.error(f"M-Pesa task failed for appointment {appointment_id}: {exc}")
         raise self.retry(exc=exc)
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_welcome_email(self, user_id):
+    """
+    Sends a welcome email to a newly registered patient.
+    """
+    try:
+        from accounts.models import User
+        user = User.objects.get(pk=user_id)
+
+        subject = f"Welcome to {settings.SITE_NAME}!"
+        message = (
+            f"Dear {user.get_full_name()},\n\n"
+            f"Welcome to {settings.SITE_NAME}!\n\n"
+            f"Your patient account has been created successfully.\n"
+            f"You can now book appointments with our doctors.\n\n"
+            f"Visit us at: https://healthportal.andasy.dev\n\n"
+            f"— The {settings.SITE_NAME} Team"
+        )
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+        logger.info(f"Welcome email sent to {user.email}")
+
+    except Exception as exc:
+        logger.error(f"Failed to send welcome email to user {user_id}: {exc}")
+        raise self.retry(exc=exc)

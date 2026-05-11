@@ -61,7 +61,13 @@ def register_view(request):
             )
             login(request, user)
             messages.success(request, f"Welcome, {user.first_name}! Your account is ready.")
-            return redirect("dashboard:patient")
+            # Send welcome email
+            try:
+                from notifications.tasks import send_welcome_email
+                send_welcome_email.delay(user.pk)
+            except Exception:
+                pass  # Never block registration for a failed notification
+            return redirect("dashboard:patient") 
 
     return render(request, "accounts/register.html")
 

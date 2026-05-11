@@ -23,42 +23,35 @@ from .slots import generate_slots
 def _parse_date(date_str):
     """
     Normalize a date string to a datetime.date object.
-    Accepts YYYY-MM-DD (standard), DD/MM/YYYY, MM/DD/YYYY, MM-DD-YYYY.
-    This makes the booking flow work across all browsers and locales.
+    Handles all browser/locale formats including Firefox which sends
+    spaces around slashes: '05 / 12 / 2026'
     """
     if not date_str:
         return None
-    raw = date_str.strip()
+    # Strip ALL spaces first — this fixes Firefox's '05 / 12 / 2026'
+    raw = date_str.replace(" ", "").strip()
 
-    # Standard ISO format — fast path
+    # Standard ISO format YYYY-MM-DD — fast path
     try:
         return datetime.date.fromisoformat(raw)
     except ValueError:
         pass
 
-    # Slash-separated formats
+    # Slash-separated: MM/DD/YYYY or DD/MM/YYYY or YYYY/MM/DD
     if "/" in raw:
         parts = raw.split("/")
         if len(parts) == 3:
-            # If last part is 4 digits it's the year: MM/DD/YYYY or DD/MM/YYYY
-            if len(parts[2]) == 4:
-                # Heuristic: if first part > 12 it must be DD/MM/YYYY
-                if int(parts[0]) > 12:
-                    return datetime.date(int(parts[2]), int(parts[1]), int(parts[0]))
-                else:
-                    # Treat as MM/DD/YYYY (Firefox US locale default)
-                    return datetime.date(int(parts[2]), int(parts[0]), int(parts[1]))
-            # YYYY/MM/DD
-            if len(parts[0]) == 4:
-                return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+            a, b, c = parts[0], parts[1], parts[2]
+            if len(c) == 4:
+                # If first part > 12 it must be day: DD/MM/YYYY
+                if int(a) > 12:
+                    return datetime.date(int(c), int(b), int(a))
+                # Otherwise MM/DD/YYYY
+                return datetime.date(int(c), int(a), int(b))
+            if len(a) == 4:
+                return datetime.date(int(a), int(b), int(c))
 
-    # Dash-separated non-ISO: MM-DD-YYYY
-    if "-" in raw:
-        parts = raw.split("-")
-        if len(parts) == 3 and len(parts[2]) == 4:
-            return datetime.date(int(parts[2]), int(parts[0]), int(parts[1]))
-
-    raise ValueError(f"Unrecognised date format: {raw!r}")
+    raise ValueError(f"Cannot parse date: {date_str!r}")
 
 @login_required
 def book_appointment(request):
@@ -167,7 +160,7 @@ def confirm_booking(request):
         status           = Appointment.Status.PENDING,
     )
 
-# Fire notification tasks asynchronously — don't block the response
+    # Fire notification tasks asynchronously — don't block the response
     from notifications.tasks import (
         send_appointment_confirmation_email,
         send_sms_reminder,
