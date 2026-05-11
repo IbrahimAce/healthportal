@@ -59,7 +59,7 @@ def register_view(request):
                 email=email, first_name=first, last_name=last,
                 phone=phone, password=password, role=Role.PATIENT
             )
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, f"Welcome, {user.first_name}! Your account is ready.")
             # Send welcome email
             try:
