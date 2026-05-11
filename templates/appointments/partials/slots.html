@@ -2,6 +2,7 @@
   <p class="text-red-500 text-sm">{{ error }}</p>
 
 {% elif slots %}
+  {# Ensure session is active - this helps with production #}
   <form method="POST" action="{% url 'appointments:confirm' %}">
     {% csrf_token %}
     <input type="hidden" name="doctor_id"  value="{{ doctor.user.pk }}" />

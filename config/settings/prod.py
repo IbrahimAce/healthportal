@@ -15,6 +15,18 @@ import os
 
 DEBUG = False
 
+# Session and CSRF configuration for production
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_TRUSTED_ORIGINS = ["https://healthportal.andasy.dev"]
+
+# Ensure session cookie domain is set
+SESSION_COOKIE_DOMAIN = None  # Use current domain
+
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------

@@ -9,6 +9,10 @@ GET  /appointments/<id>/          — appointment detail
 POST /appointments/<id>/cancel/   — cancel an appointment
 """
 
+import sys
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
+
 import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -62,11 +66,16 @@ def book_appointment(request):
 
 
 @login_required
+@csrf_exempt  # Temporary fix for production
 def load_slots(request):
     """
     HTMX endpoint — called when patient selects a doctor + date.
     Returns only the slots partial (no full page reload).
     """
+    # Add debug to see if user is authenticated
+    print(f"User authenticated: {request.user.is_authenticated}", file=sys.stderr)
+    print(f"Session key: {request.session.session_key}", file=sys.stderr)
+
     doctor_id = request.GET.get("doctor_id")
     date_str  = request.GET.get("date")
 
