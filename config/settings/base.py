@@ -149,14 +149,11 @@ CELERY_RESULT_BACKEND = env("REDIS_URL")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
-# ---------------------------------------------------------------------------
-# CACHE
-# ---------------------------------------------------------------------------
-
+# Use local memory cache instead of Redis for production
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_URL"),
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
 
