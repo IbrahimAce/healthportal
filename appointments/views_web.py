@@ -20,7 +20,6 @@ from accounts.models import User, Role
 from .models import Appointment
 from .slots import generate_slots
 
-
 def _parse_date(date_str):
     """
     Normalize a date string to a datetime.date object.
@@ -30,27 +29,49 @@ def _parse_date(date_str):
     """
     if not date_str:
         return None
+
+    # Clean the string
     raw = date_str.replace(" ", "").strip()
     if not raw:
         return None
 
-    # Standard ISO format YYYY-MM-DD — fast path
+    # Remove any timezone info if present
+    if 'T' in raw:
+        raw = raw.split('T')[0]
+    if '+' in raw:
+        raw = raw.split('+')[0]
+
+    # Try ISO format YYYY-MM-DD first (most common)
     try:
         return datetime.date.fromisoformat(raw)
     except ValueError:
         pass
 
-    # Slash-separated: MM/DD/YYYY or DD/MM/YYYY or YYYY/MM/DD
+    # Try DD/MM/YYYY format
     if "/" in raw:
         parts = raw.split("/")
         if len(parts) == 3:
-            a, b, c = parts[0], parts[1], parts[2]
-            if len(c) == 4:
-                if int(a) > 12:
-                    return datetime.date(int(c), int(b), int(a))
-                return datetime.date(int(c), int(a), int(b))
-            if len(a) == 4:
-                return datetime.date(int(a), int(b), int(c))
+            # Try YYYY/MM/DD
+            if len(parts[0]) == 4:
+                try:
+                    return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+                except ValueError:
+                    pass
+
+            # Try MM/DD/YYYY or DD/MM/YYYY
+            try:
+                # Assume DD/MM/YYYY
+                return datetime.date(int(parts[2]), int(parts[1]), int(parts[0]))
+            except (ValueError, IndexError):
+                pass
+
+    # Try parsing with datetime.strptime as fallback
+    formats = ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d']
+    for fmt in formats:
+        try:
+            return datetime.datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
 
     return None
 
@@ -90,17 +111,24 @@ def load_slots(request):
             doctor = get_object_or_404(DoctorProfile, pk=doctor_id)
             date   = _parse_date(date_str)
 
+            # Debug print (remove after testing)
+            print(f"DEBUG: date_str='{date_str}', parsed date={date}")
+
             if date is None:
                 error = "Please select a valid date."
             elif date < timezone.localdate():
                 error = "Please select a future date."
             else:
+                # Ensure date is a date object, not string
+                if isinstance(date, str):
+                    date = _parse_date(date)
                 slots = generate_slots(doctor, date)
                 if not slots:
                     error = "No available slots for this doctor on the selected date."
 
-        except (ValueError, TypeError) as e:
-            error = "Invalid date format."
+        except Exception as e:
+            print(f"ERROR in load_slots: {str(e)}")  # Debug
+            error = f"Invalid date format. Please use YYYY-MM-DD."
 
     return render(request, "appointments/partials/slots.html", {
         "slots":  slots,
@@ -131,11 +159,26 @@ def confirm_booking(request):
         if not doctor.is_doctor:
             messages.error(request, "Selected user is not a doctor.")
             return redirect("appointments:book")
-        date       = _parse_date(date_str)
-        start_time = datetime.time.fromisoformat(start_str)
-        end_time   = datetime.time.fromisoformat(end_str)
-    except (ValueError, TypeError):
-        messages.error(request, "Invalid booking data. Please try again.")
+
+        date = _parse_date(date_str)
+        if date is None:
+            messages.error(request, "Invalid date format. Please go back and select a date.")
+            return redirect("appointments:book")
+
+        # Handle time parsing with better error messages
+        if not start_str or not end_str:
+            messages.error(request, "Missing time slot. Please go back and select a time.")
+            return redirect("appointments:book")
+
+        try:
+            start_time = datetime.time.fromisoformat(start_str)
+            end_time = datetime.time.fromisoformat(end_str)
+        except (ValueError, TypeError) as e:
+            messages.error(request, f"Invalid time format: {start_str} or {end_str}. Please try again.")
+            return redirect("appointments:book")
+
+    except (ValueError, TypeError, User.DoesNotExist) as e:
+        messages.error(request, f"Invalid booking data: {str(e)}. Please try again.")
         return redirect("appointments:book")
 
     if date is None:
