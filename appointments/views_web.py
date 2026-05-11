@@ -187,13 +187,17 @@ def confirm_booking(request):
         status           = Appointment.Status.PENDING,
     )
 
+
+    # TEMPORARILY DISABLED FOR PRODUCTION - No Celery broker configured
     # Fire notification tasks asynchronously — don't block the response
-    from notifications.tasks import (
-        send_appointment_confirmation_email,
-        send_sms_reminder,
-    )
-    send_appointment_confirmation_email.delay(appointment.pk)
-    send_sms_reminder.delay(appointment.pk)
+    # from notifications.tasks import (
+    #     send_appointment_confirmation_email,
+    #     send_sms_reminder,
+    # )
+    # send_appointment_confirmation_email.delay(appointment.pk)
+    # send_sms_reminder.delay(appointment.pk)
+
+    # TODO: Set up Redis/RabbitMQ for production, then re-enable above
 
     messages.success(request, f"Appointment booked for {date} at {start_time.strftime('%H:%M')}. Awaiting confirmation.")
     return redirect("appointments:detail", pk=appointment.pk)
@@ -271,8 +275,9 @@ def cancel_appointment(request, pk):
         appointment.status = Appointment.Status.CANCELLED
         appointment.save()
 
-        from notifications.tasks import send_appointment_cancellation_email
-        send_appointment_cancellation_email.delay(appointment.pk)
+        # TEMPORARILY DISABLED FOR PRODUCTION
+        # from notifications.tasks import send_appointment_cancellation_email
+        # send_appointment_cancellation_email.delay(appointment.pk) 
 
         messages.success(request, "Appointment cancelled successfully.")
         return redirect("appointments:list")
