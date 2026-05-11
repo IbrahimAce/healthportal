@@ -20,16 +20,19 @@ from accounts.models import User, Role
 from .models import Appointment
 from .slots import generate_slots
 
+
 def _parse_date(date_str):
     """
     Normalize a date string to a datetime.date object.
     Handles all browser/locale formats including Firefox which sends
     spaces around slashes: '05 / 12 / 2026'
+    Returns None if date_str is empty or None.
     """
     if not date_str:
         return None
-    # Strip ALL spaces first — this fixes Firefox's '05 / 12 / 2026'
     raw = date_str.replace(" ", "").strip()
+    if not raw:
+        return None
 
     # Standard ISO format YYYY-MM-DD — fast path
     try:
@@ -43,15 +46,14 @@ def _parse_date(date_str):
         if len(parts) == 3:
             a, b, c = parts[0], parts[1], parts[2]
             if len(c) == 4:
-                # If first part > 12 it must be day: DD/MM/YYYY
                 if int(a) > 12:
                     return datetime.date(int(c), int(b), int(a))
-                # Otherwise MM/DD/YYYY
                 return datetime.date(int(c), int(a), int(b))
             if len(a) == 4:
                 return datetime.date(int(a), int(b), int(c))
 
     raise ValueError(f"Cannot parse date: {date_str!r}")
+
 
 @login_required
 def book_appointment(request):
@@ -59,9 +61,9 @@ def book_appointment(request):
     Step 1 — patient picks a doctor and a date.
     The date defaults to tomorrow.
     """
-    doctors  = DoctorProfile.objects.filter(
+    doctors = DoctorProfile.objects.filter(
         is_available=True
-    ).select_related("user")
+    ).select_related("user").prefetch_related("schedules")
 
     tomorrow = (timezone.localdate() + datetime.timedelta(days=1)).isoformat()
 
@@ -77,8 +79,8 @@ def load_slots(request):
     HTMX endpoint — called when patient selects a doctor + date.
     Returns only the slots partial (no full page reload).
     """
-    doctor_id  = request.GET.get("doctor_id")
-    date_str   = request.GET.get("date")
+    doctor_id = request.GET.get("doctor_id")
+    date_str  = request.GET.get("date")
 
     slots  = []
     error  = None
@@ -87,23 +89,25 @@ def load_slots(request):
     if doctor_id and date_str:
         try:
             doctor = get_object_or_404(DoctorProfile, pk=doctor_id)
-            date = _parse_date(date_str)
+            date   = _parse_date(date_str)
 
-            if date < timezone.localdate():
+            if date is None:
+                error = "Please select a valid date."
+            elif date < timezone.localdate():
                 error = "Please select a future date."
             else:
                 slots = generate_slots(doctor, date)
                 if not slots:
                     error = "No available slots for this doctor on the selected date."
 
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             error = "Invalid date format."
 
     return render(request, "appointments/partials/slots.html", {
-        "slots":     slots,
-        "doctor":    doctor,
-        "date":      date_str,
-        "error":     error,
+        "slots":  slots,
+        "doctor": doctor,
+        "date":   date_str,
+        "error":  error,
     })
 
 
@@ -116,23 +120,27 @@ def confirm_booking(request):
     if request.method != "POST":
         return redirect("appointments:book")
 
-    doctor_id  = request.POST.get("doctor_id")
-    date_str   = request.POST.get("date")
-    start_str  = request.POST.get("start_time")
-    end_str    = request.POST.get("end_time")
-    reason     = request.POST.get("reason", "")
-    appt_type  = request.POST.get("appointment_type", Appointment.AppointmentType.IN_PERSON)
+    doctor_id = request.POST.get("doctor_id")
+    date_str  = request.POST.get("date")
+    start_str = request.POST.get("start_time")
+    end_str   = request.POST.get("end_time")
+    reason    = request.POST.get("reason", "")
+    appt_type = request.POST.get("appointment_type", Appointment.AppointmentType.IN_PERSON)
 
     try:
-        doctor     = get_object_or_404(User, pk=doctor_id)
+        doctor = get_object_or_404(User, pk=doctor_id)
         if not doctor.is_doctor:
             messages.error(request, "Selected user is not a doctor.")
             return redirect("appointments:book")
-        date = _parse_date(date_str)
+        date       = _parse_date(date_str)
         start_time = datetime.time.fromisoformat(start_str)
         end_time   = datetime.time.fromisoformat(end_str)
     except (ValueError, TypeError):
         messages.error(request, "Invalid booking data. Please try again.")
+        return redirect("appointments:book")
+
+    if date is None:
+        messages.error(request, "Invalid date. Please try again.")
         return redirect("appointments:book")
 
     # Guard against double booking at submit time
@@ -143,7 +151,7 @@ def confirm_booking(request):
         messages.error(request, "That slot was just taken. Please choose another.")
         return redirect("appointments:book")
 
-    # Get doctor's consultation fee for payment tracking
+    # Get doctor's consultation fee
     fee = 0
     if hasattr(doctor, "doctor_profile"):
         fee = doctor.doctor_profile.consultation_fee
@@ -171,6 +179,7 @@ def confirm_booking(request):
     messages.success(request, f"Appointment booked for {date} at {start_time.strftime('%H:%M')}. Awaiting confirmation.")
     return redirect("appointments:detail", pk=appointment.pk)
 
+
 @login_required
 def appointment_list(request):
     """
@@ -190,7 +199,6 @@ def appointment_list(request):
         ).select_related("patient", "patient__patient_profile").order_by("-date", "-start_time")
 
     else:
-        # Receptionists and admins see all
         appointments = Appointment.objects.all().select_related(
             "patient", "doctor"
         ).order_by("-date", "-start_time")
@@ -207,7 +215,6 @@ def appointment_detail(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
     user        = request.user
 
-    # Access control
     if user.is_patient and appointment.patient != user:
         messages.error(request, "You do not have access to this appointment.")
         return redirect("appointments:list")
@@ -227,7 +234,6 @@ def cancel_appointment(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
     user        = request.user
 
-    # Only the patient or doctor involved can cancel
     can_cancel = (
         (user.is_patient and appointment.patient == user) or
         (user.is_doctor  and appointment.doctor  == user) or
