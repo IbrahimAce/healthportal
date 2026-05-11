@@ -52,8 +52,7 @@ def _parse_date(date_str):
             if len(a) == 4:
                 return datetime.date(int(a), int(b), int(c))
 
-    raise ValueError(f"Cannot parse date: {date_str!r}")
-
+    return None
 
 @login_required
 def book_appointment(request):
